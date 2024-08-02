@@ -63,6 +63,17 @@ const remembarMe = !!email;
           >
             Acceder
           </button>
+
+          <div class="flex flex-1 w-full my-2">
+            <div class="w-full border-t-2 border-gray-500"></div>
+          </div>
+          <button
+            type="button"
+            id="btn-google"
+            class="disabled:bg-gray-300 w-full flex justify-center bg-red-400 text-gray-100 p-3 rounded-full tracking-wide font-semibold shadow-lg cursor-pointer transition ease-in duration-500"
+          >
+            Acceder con Google
+          </button>
         </div>
       </form>
       <div class="pt-5 text-center text-gray-400 text-xs">
@@ -82,11 +93,14 @@ const remembarMe = !!email;
 </AuthLayout>
 
 <script>
+  import { firebase } from "@/firebase/config";
   import { actions } from "astro:actions";
+  import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
   import Swal from "sweetalert2";
 
   const form = document.querySelector("form") as HTMLFormElement;
   const btnSubmit = document.querySelector("#btn-submit") as HTMLButtonElement;
+  const btnGoogle = document.querySelector("#btn-google") as HTMLButtonElement;
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -110,5 +124,33 @@ const remembarMe = !!email;
     }
 
     window.location.replace("/protected");
+  });
+
+  btnGoogle.addEventListener("click", async (e) => {
+    e.preventDefault();
+    btnGoogle.setAttribute("disabled", "disabled");
+
+    const provider = new GoogleAuthProvider();
+
+    try {
+      //! Paso 1: obtener las credenciales del lado del cliente
+      const credentials = await signInWithPopup(firebase.auth, provider);
+      console.log(credentials);
+
+      //! Paso 2: verificar las credenciales en el backend
+      const { data, error } = await actions.loginWithGoogle(credentials);
+
+      if (error) {
+        alert(error.message);
+        btnGoogle.removeAttribute("disabled");
+        return;
+      }
+
+      btnGoogle.innerText = "Redireccionando ....";
+      window.location.replace("/protected");
+    } catch (error) {
+      console.log(error);
+      btnGoogle.removeAttribute("disabled");
+    }
   });
 </script>
